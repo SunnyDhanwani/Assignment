@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieAdda</title>
+    <link rel="icon" href="https://image.flaticon.com/icons/png/512/129/129461.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style type="text/css">
+
+        body {
+            margin: 0px;
+            font-size: 62.5%;
+            background-color: black;
+            color: white;
+            font-size: 18px;
+            font-family: "Roboto","Helvetica","Arial", "sans-serif";
+        }
+    
+        #input-container {
+            display: flex;
+            flex-direction: column;
+            margin: 30px 5px;
+            width: 100%;
+            /* background-color: brown; */
+            padding: 10px;
+            justify-content: center;
+            align-items: center;    
+        }
+
+        #inputData {
+            position: sticky;
+        }
+    
+        #movieInp {
+            background-color: white;
+            min-width: 100px;
+            width: 500px;
+            outline: 0px;
+            border: 0px;
+            height: 2rem;
+            border-radius: 10px;
+            text-indent: 30px;
+            letter-spacing: 1.5px;
+        }
+
+        #movieInp:focus {
+            box-shadow: 0px 0px 10px 0 rgba(255, 215, 0, 0.9);
+        }
+
+        button {
+            display: block;
+            background-color: black;
+            outline: none;
+            margin: 10px auto;
+            height: 30px;
+            width: 100px;
+            border-radius: 10px;
+            border: 2px solid gold;
+            font-weight: bold;
+            color: rgb(255, 215, 0);
+        }
+
+        button:hover {
+            background-color: gold;
+            color: black;
+            cursor: pointer;
+        }
+
+        button:active {
+            background-color: goldenrod;
+        }
+
+        #movieResult {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #1A1A1A;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px 0 rgba(255, 215, 0, 0.9);
+        }
+
+        .fa {
+            color: gold;
+        }
+
+        #recent {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+        }
+
+        @media screen and (max-width: 600px) {
+            #movieResult {
+                flex-direction: column;
+            }
+
+            #movieInp {
+                width: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="background-color: gold; display: flex; width: fit-content; padding: 10px; margin: 15px 20px; font-weight: bold; border-radius: 10px; color: black;">MovieAdda</div>
+    <div id="input-container">
+        <form id="inputData" onsubmit="checkMovie(event)">
+            <input id="movieInp" placeholder="Enter Movie Name" type="text"/>
+            <button type="submit">Search</button>
+        </form>
+    </div>
+        <div id="movieResult"></div>
+        <div id="recent">
+            <div style="background-color: gold; width: 7px; height: 40px; border-radius: 10px; margin-right: 10px;"></div>
+            <span style="font-size: 30px;"><b>Recently Viewed ></b></span>
+        </div>
+        <div id="history"></div>
+</body>
+</html>
+<script>
+    let arr = [];
+    async function checkMovie(e) {
+        e.preventDefault();
+
+        let movieDiv = document.getElementById('movieResult');
+        let movieField = document.getElementById('movieInp');
+        movieName = movieField.value;
+        movieField.value = null;
+        movieDiv.innerHTML = null;
+
+        try {
+            let res = await fetch(`http://www.omdbapi.com/?i=tt3896198&apikey=b31268f2&t=${movieName}`);
+            let data = await res.json();
+            console.log("This is data: ", data)
+            //arr.push(data);
+
+            let temp = JSON.parse(localStorage.getItem('movieHistory'));
+            if (data['Response'] != 'False') {
+                if (temp == null) {
+                    localStorage.setItem('movieHistory', JSON.stringify([]));
+                } else {
+                    temp.push(data);
+                    localStorage.setItem('movieHistory', JSON.stringify(temp))
+                }
+                console.log("This is array of history: ", temp)
+                showMovie(data);
+            } else {
+                document.getElementById('movieResult').innerHTML = `${movieName} not found`;
+            }
+        } catch (err) {
+            console.log("This is error: ", err);
+            movieDiv.innerHTML = `${movieName} is not found`;
+        }
+    }
+
+    function showMovie(data) {
+        let div = document.getElementById('movieResult');
+        div.style.display = 'flex';
+        div.style.width = '60%';
+        div.style.margin = 'auto';
+        div.style.padding = '20px';
+        div.style.borderRadius = '10px';
+
+        let left_div = document.createElement('div');
+        left_div.style.position = 'relative';
+        // left_div.style.padding = '10px';
+
+        let m_img = document.createElement('img');
+        m_img.src = `${data['Poster']}`;
+        m_img.style.width = '170px';
+        m_img.style.height = '250px';
+        m_img.style.objectFit = 'cover';
+        m_img.style.zIndex = '0';
+
+        if (data['imdbRating'] > 8.5) {
+            let recommend = document.createElement('div');
+            recommend.innerHTML = 'Recommended';
+            recommend.style.position = 'absolute';
+            recommend.style.top = '2px';
+            recommend.style.left = '0px';
+            recommend.style.backgroundColor = 'green';
+            recommend.style.padding = '3px';
+            recommend.style.fontSize = '16px';
+            recommend.style.borderRadius = '0px 5px 5px 0px';
+            // recommend.style.opacity = '0.7';
+            // console.log("Recommended")
+            left_div.append(recommend)
+        }
+        left_div.append(m_img);
+        
+        let right_div = document.createElement('div');
+        right_div.style.paddingLeft = '10px';
+
+        let m_title = document.createElement('p');
+        m_title.append(`${data['Title']}`);
+        
+        let m_date = document.createElement('p');
+        m_date.append(`${data['Released']}`);
+
+        let m_rating = document.createElement('p');
+        let m_star = document.createElement('span');
+        m_star.innerHTML = `<i class="fa fa-star" aria-hidden="true"></i>`;
+        m_rating.innerHTML = `<i class="fa fa-star" aria-hidden="true"></i> ${data['imdbRating']} / 10`;
+
+        let m_plot = document.createElement('p');
+        m_plot.innerHTML = `<b> Plot: </b> ${data['Plot']}`;
+
+        let m_genre = document.createElement('p');
+        m_genre.innerHTML = `<b>Genre:</b> ${data['Genre']}`;
+
+        right_div.append(m_title, m_date, m_rating, m_plot, m_genre);
+
+        div.append(left_div, right_div);
+        showHistory();
+    }
+
+    function showHistory() {
+        let history = document.getElementById('history');
+        history.innerHTML = null;
+        history.style.display = "flex";
+        history.style.flexWrap = 'wrap';
+
+        let searchedData = JSON.parse(localStorage.getItem('movieHistory'));
+
+        console.log(searchedData);
+
+        searchedData.forEach((el) => {
+            let div = document.createElement('div');
+            div.style.margin = '10px 30px';
+            div.style.width = '170px';
+            div.style.position = 'relative';
+
+            let img = document.createElement('img');
+            img.src = el['Poster'];
+            img.style.width = '170px';
+            img.style.height = '250px';
+            img.style.objectFit = 'cover';
+
+            if (el['imdbRating'] > 8.5) {
+                let recommend = document.createElement('div');
+                recommend.innerHTML = 'Recommended';
+                recommend.style.position = 'absolute';
+                recommend.style.top = '2px';
+                recommend.style.left = '0px';
+                recommend.style.backgroundColor = 'green';
+                recommend.style.padding = '3px';
+                recommend.style.fontSize = '16px';
+                recommend.style.borderRadius = '0px 5px 5px 0px';
+                div.append(recommend)
+            }
+
+            let title = document.createElement('p');
+            title.innerHTML = el['Title'];
+
+            div.append(img, title);
+            // console.log(el['Title']);
+
+            history.prepend(div)
+        })
+    }
+
+    showHistory();
+
+</script>
